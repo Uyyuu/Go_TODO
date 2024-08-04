@@ -1,0 +1,47 @@
+services:
+  udemy-backend:
+    container_name: udemy-backend
+    build:
+      context: ./backend
+      dockerfile: ../docker/go/Dockerfile
+    volumes:
+      - .:/app/echo-rest-api-docker
+    ports:
+      - 8000:8000
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SECRET_KEY: ${SECRET_KEY}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+
+  mysql:
+    container_name: mysql
+    image: mysql:8.0
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ALLOW_EMPTY_PASSWORD: ${MYSQL_ALLOW_EMPTY_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - ./mysql/mysql_init:/docker-entrypoint-initdb.d
+      - ./mysql/my.cnf:/etc/my.cnf
+      - db-mysql-udemy:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost" ]
+  
+  swagger-ui:
+    image: swaggerapi/swagger-ui:latest
+    environment:
+      - SWAGGER_JSON=/api/api-document.yaml
+    volumes:
+      - ./api-document.yaml:/api/api-document.yaml:ro
+    ports:
+      - "127.0.0.1:8082:8080"
+
+volumes:
+  db-mysql-udemy:
