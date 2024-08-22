@@ -20,7 +20,8 @@
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"golang.Go"
+				"golang.Go",
+				"Gruntfuggly.todo-tree"
 			]
 		}
 	}
