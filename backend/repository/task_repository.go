@@ -1,9 +1,11 @@
 package repository
 
 import (
+	"fmt"
 	"go-rest-api/model"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type ITaskRepository interface {
@@ -22,7 +24,6 @@ func NewtaskRepository (db *gorm.DB) ITaskRepository {
 	return &taskRepository{db}
 }
 
-// TODO: 元の回答とチェック
 func (tr *taskRepository) GetAllTasks(tasks *[]model.Task, userId uint) error {
 	if err := tr.db.Where("user_id=?", userId).Order("created_at").Find(tasks).Error; err != nil {
 		return err
@@ -30,7 +31,6 @@ func (tr *taskRepository) GetAllTasks(tasks *[]model.Task, userId uint) error {
 	return nil
 }
 
-// TODO: 元の回答とチェック
 func (tr *taskRepository) GetTaskById(task *model.Task, userId uint, taskId uint) error {
 	if err := tr.db.Where("user_id=? AND Id=?", userId, taskId).First(task).Error; err != nil {
 		return err
@@ -38,7 +38,6 @@ func (tr *taskRepository) GetTaskById(task *model.Task, userId uint, taskId uint
 	return nil
 }
 
-// TODO: 元の回答とチェック
 func (tr *taskRepository) CreateTask(task *model.Task) error {
 	if err := tr.db.Create(task).Error; err != nil {
 		return err
@@ -46,18 +45,24 @@ func (tr *taskRepository) CreateTask(task *model.Task) error {
 	return nil
 }
 
-// TODO: 元の回答と結構違うぽい．チェックする
 func (tr *taskRepository) UpdateTask(task *model.Task, userId uint, taskId uint) error {
-	if err := tr.db.Where("user_id=? AND id=?", userId, taskId).Save(task).Error; err != nil {
+	results := tr.db.Model(task).Clauses(clause.Returning{}).Where("user_id=? AND id=?", userId, taskId).Update("title", task.Title)
+	if err := results.Error; err != nil {
 		return err
+	}
+	if results.RowsAffected < 1 {
+		return fmt.Errorf("object does not exist")
 	}
 	return nil
 }
 
-// TODO: もし消せなかった場合は？
 func (tr *taskRepository) DeleteTask(userId uint, taskId uint) error {
-	if err := tr.db.Where("user_id=? AND id=?", userId, taskId).Delete(&model.Task{}).Error; err != nil {
+	results := tr.db.Where("user_id=? AND id=?", userId, taskId).Delete(&model.Task{})
+	if err := results.Error; err != nil {
 		return err
+	}
+	if results.RowsAffected	< 1 {
+		return fmt.Errorf("object does not exist")
 	}
 	return nil
 }
